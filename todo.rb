@@ -37,32 +37,32 @@ get "/lists/new" do
   erb :new_list
 end
 
-get "/lists/:id" do
-  @list_id = params[:id].to_i
+get "/lists/:list_id" do
+  @list_id = params[:list_id].to_i
   @list = session[:lists][@list_id]
   @todos = @list[:todos]
 
   erb :list
 end
 
-get "/lists/:id/edit" do
-  id = params[:id].to_i
-  @list = session[:lists][id]
+get "/lists/:list_id/edit" do
+  list_id = params[:list_id].to_i
+  @list = session[:lists][list_id]
 
   erb :edit_list
 end
 
-post "/lists/:id/edit" do
-  id = params[:id].to_i
+post "/lists/:list_id/edit" do
+  list_id = params[:list_id].to_i
   list_name = params[:list_name].strip
-  @list = session[:lists][id]
+  @list = session[:lists][list_id]
 
   if invalid_list_name?(list_name)
     erb :edit_list
   else
     @list[:name] = list_name
     session[:success] = "The list has been updated."
-    redirect "/lists/#{id}"
+    redirect "/lists/#{list_id}"
   end
 end
 
@@ -80,14 +80,14 @@ post "/lists/:list_id/todos" do
   end
 end
 
-post "/lists/:id/delete" do
-  session[:lists].delete_at(params[:id].to_i)
+post "/lists/:list_id/delete" do
+  session[:lists].delete_at(params[:list_id].to_i)
   session[:success] = "The list has been deleted successfully."
   redirect "/lists"
 end
 
-post "/lists/:id/complete" do
-  list_id = params[:id].to_i
+post "/lists/:list_id/complete" do
+  list_id = params[:list_id].to_i
   list = session[:lists][list_id]
   list[:todos].each { |todo| todo[:completed] = true }
   session[:success] = "The list has been completed."
