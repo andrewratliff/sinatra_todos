@@ -29,20 +29,6 @@ helpers do
     completed?(list) ? "complete" : ""
   end
 
-  # def sorted_lists
-  #   session[:lists].map.with_index do |list, index|
-  #     complete = completed?(list) ? 1 : 0
-  #     [index, list, complete]
-  #   end.sort_by { |list| list[2] }
-  # end
-
-  # def sorted_todos(list)
-  #   list[:todos].map.with_index do |todo, index|
-  #     complete = todo[:completed] ? 1 : 0
-  #     [index, todo, complete]
-  #   end.sort_by { |todo| todo[2] }
-  # end
-
   def sort_lists(lists)
     complete_lists, incomplete_lists = lists.partition { |list| completed?(list) }
 
@@ -88,7 +74,7 @@ end
 
 get "/lists/:list_id" do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
   @todos = @list[:todos]
 
   erb :list
@@ -104,7 +90,7 @@ end
 post "/lists/:list_id/edit" do
   list_id = params[:list_id].to_i
   list_name = params[:list_name].strip
-  @list = session[:lists][list_id]
+  @list = load_list(@list_id)
 
   if invalid_list_name?(list_name)
     erb :edit_list
@@ -117,7 +103,7 @@ end
 
 post "/lists/:list_id/todos" do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
   text = params[:todo].strip
 
   if invalid_todo_name?(text)
@@ -130,6 +116,7 @@ post "/lists/:list_id/todos" do
 end
 
 post "/lists/:list_id/delete" do
+  load_list(params[:list_id])
   session[:lists].delete_at(params[:list_id].to_i)
   session[:success] = "The list has been deleted successfully."
   redirect "/lists"
@@ -137,7 +124,7 @@ end
 
 post "/lists/:list_id/complete" do
   list_id = params[:list_id].to_i
-  list = session[:lists][list_id]
+  list = load_list(list_id)
   list[:todos].each { |todo| todo[:completed] = true }
   session[:success] = "The list has been completed."
   redirect "/lists/#{list_id}"
@@ -146,7 +133,8 @@ end
 post "/lists/:list_id/todos/:todo_id/delete" do
   list_id = params[:list_id].to_i
   todo_id = params[:todo_id].to_i
-  session[:lists][list_id][:todos].delete_at(todo_id)
+  list = load_list(list_id)
+  list[:todos].delete_at(todo_id)
   session[:success] = "The todo has been deleted successfully."
   redirect "/lists/#{list_id}"
 end
@@ -154,13 +142,22 @@ end
 post "/lists/:list_id/todos/:todo_id" do
   list_id = params[:list_id].to_i
   todo_id = params[:todo_id].to_i
+  list = load_list(list_id)
   completed = params[:completed] == "true"
-  session[:lists][list_id][:todos][todo_id][:completed] = completed
+  list[:todos][todo_id][:completed] = completed
   session[:success] = "The todo has been updated."
   redirect "/lists/#{list_id}"
 end
 
 private
+
+def load_list(index)
+  list = session[:lists][index] if index && session[:lists][index]
+  return list if list
+
+  session[:error] = "The specified list was not found."
+  redirect "/lists"
+end
 
 def invalid_list_name?(list_name)
   error = false
