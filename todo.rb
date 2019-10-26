@@ -1,12 +1,60 @@
 require "sinatra"
 require "sinatra/content_for"
-require "sinatra/reloader"
 require "tilt/erubis"
-require "pry"
+
+if development?
+  require "pry"
+  require "sinatra/reloader"
+end
 
 configure do
   enable :sessions
   set :session_secret, "secret"
+end
+
+helpers do
+  def completed?(list)
+    !list[:todos].empty? && list[:todos].all? { |todo| todo[:completed] }
+  end
+
+  def list_progress(list)
+    completed = list[:todos].reject { |todo| todo[:completed] }.count
+    total = list[:todos].count
+
+    "#{completed} / #{total}"
+  end
+
+  def list_class(list)
+    completed?(list) ? "complete" : ""
+  end
+
+  # def sorted_lists
+  #   session[:lists].map.with_index do |list, index|
+  #     complete = completed?(list) ? 1 : 0
+  #     [index, list, complete]
+  #   end.sort_by { |list| list[2] }
+  # end
+
+  # def sorted_todos(list)
+  #   list[:todos].map.with_index do |todo, index|
+  #     complete = todo[:completed] ? 1 : 0
+  #     [index, todo, complete]
+  #   end.sort_by { |todo| todo[2] }
+  # end
+
+  def sort_lists(lists)
+    complete_lists, incomplete_lists = lists.partition { |list| completed?(list) }
+
+    incomplete_lists.each { |list| yield list, lists.index(list) }
+    complete_lists.each { |list| yield list, lists.index(list) }
+  end
+
+  def sort_todos(todos)
+    complete_todos, incomplete_todos = todos.partition { |todo| todo[:completed] }
+
+    incomplete_todos.each { |todo| yield todo, todos.index(todo) }
+    complete_todos.each { |todo| yield todo, todos.index(todo) }
+  end
 end
 
 before do

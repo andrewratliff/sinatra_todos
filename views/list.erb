@@ -1,6 +1,7 @@
-<section id="todos">
+<section id="todos" class="<%= list_class(@list) %>">
   <header>
     <h2><%= @list[:name] %></h2>
+
     <ul>
       <li>
         <form action="/lists/<%= @list_id %>/complete" method="post">
@@ -12,7 +13,7 @@
   </header>
 
   <ul>
-    <% @list[:todos].each_with_index do |todo, index| %>
+    <% sort_todos(@list[:todos]) do |todo, index| %>
       <% if todo[:completed] %>
         <li class="complete">
       <% else %>
@@ -35,7 +36,7 @@
 </section>
 
 <% content_for :header_links do %>
-  <a class="add" href="/lists">All Lists</a>
+  <a class="list" href="/lists">All Lists</a>
 <% end %>
 
 <form action="/lists/<%= @list_id %>/todos" method="post">
